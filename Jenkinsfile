@@ -49,10 +49,7 @@ node ('master'){
         }
         stage('Asking for manual approval') {
             timeout(time: 120, unit: 'SECONDS') {
-                def proceed = input 'It\'s successfully builded. Please, approve changes'
-                if (proceed != "proceed"){
-                    throw new Exception("You didn't approve deploy of new application version. Response: ${proceed}. Stopping...")
-                }
+                input 'It\'s successfully builded. Please, approve changes'
             }
         }
         stage('Deployment') {
