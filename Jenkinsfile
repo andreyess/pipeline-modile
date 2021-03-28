@@ -1,40 +1,19 @@
 @Library('pipeline-library') _
 node ('master'){
 try {
-  stage('Checking out') {
-    git branch: 'main', changelog: false, credentialsId: 'git-andreyess-private-key', poll: false, url: 'https://github.com/andreyess/build-tools.git'
-  }
-}
-catch (err) {
-    echo "Caught: ${err}"
-    currentBuild.result = 'FAILURE'
-    //step([$class: 'Mailer', recipients: 'andrey.karpyza.steam@gmail.com'])
-}
-try {
-    stage ('Building code') {
-    mvnHome = tool name: 'MAVEN', type: 'maven'
-    sh "'${mvnHome}/bin/mvn' -Dmaven.test.failure.ignore clean package -f helloworld-project/helloworld-ws/pom.xml"
+    stage('Checking out') {
+        git branch: 'main', changelog: false, credentialsId: 'git-andreyess-private-key', poll: false, url: 'https://github.com/andreyess/build-tools.git'
     }
-}
-catch (err) {
-    echo "Caught: ${err}"
-    currentBuild.result = 'FAILURE'
-    //step([$class: 'Mailer', recipients: 'andrey.karpyza.steam@gmail.com'])
-}
-try {
+    stage ('Building code') {
+        mvnHome = tool name: 'MAVEN', type: 'maven'
+        sh "'${mvnHome}/bin/mvn' -Dmaven.test.failure.ignore clean package -f helloworld-project/helloworld-ws/pom.xml"
+    }
     stage ('Sonar scan') {
         withSonarQubeEnv(credentialsId: 'sonar-secret') {
             sonarHome = tool name: 'SONAR', type: 'hudson.plugins.sonar.SonarRunnerInstallation'
             sh "${sonarHome}/bin/sonar-scanner -Dsonar.java.binaries=helloworld-project/helloworld-ws/target/classes -Dsonar.host.url=http://sonar.akarpyza.lab.playpit.by/ -Dsonar.projectKey=MNT:akarpyza-pipeline -Dsonar.sources=helloworld-project/helloworld-ws -Dsonar.projectName=\"MNT 11 akarpyza pipeline\" -Dsonar.projectVersion=${BUILD_TAG}"
         }
     }
-}
-catch (err) {
-    echo "Caught: ${err}"
-    currentBuild.result = 'FAILURE'
-    //step([$class: 'Mailer', recipients: 'andrey.karpyza.steam@gmail.com'])
-}
-try {
     stage('Testing') {
         mvnHome = tool name: 'MAVEN', type: 'maven'
         parallel (
@@ -48,59 +27,35 @@ try {
             failFast: true
         )
     }
-}
-catch (err) {
-    echo "Caught: ${err}"
-    currentBuild.result = 'FAILURE'
-    //step([$class: 'Mailer', recipients: 'andrey.karpyza.steam@gmail.com'])
-}
-try {
     stage('Triggering job and fetching') {
       build propagate: false, job: 'MNTLAB-akarpyza-child1-build-job', parameters: [string(name: 'BRANCH_NAME', value: 'akarpyza')]
       copyArtifacts fingerprintArtifacts: true, projectName: 'MNTLAB-akarpyza-child1-build-job', selector: lastSuccessful()
     }
-}
-catch (err) {
-    echo "Caught: ${err}"
-    currentBuild.result = 'FAILURE'
-   // step([$class: 'Mailer', recipients: 'andrey.karpyza.steam@gmail.com'])
-}
-try {
-stage('Packaging and Publishing results') {
-    parallel(
-       "Push artifact": {
-            sh "tar -cvf pipeline-akarpyza-${BUILD_NUMBER}.tar.gz helloworld-project/helloworld-ws/target/helloworld-ws.war output.txt"
+    stage('Packaging and Publishing results') {
+        parallel(
+        "Push artifact": {
+                sh "tar -cvf pipeline-akarpyza-${BUILD_NUMBER}.tar.gz helloworld-project/helloworld-ws/target/helloworld-ws.war output.txt"
 
-            publishing.BuildAndPublishToNexus("${BUILD_NUMBER}", 'nexus.akarpyza.lab.playpit.by/repository/artifacts_hosted/', 'raw-repo', '7.1.0.GA', 'org', 'nexus creds')
-        },
-        "Push image": {
-            sh 'echo "FROM jboss/wildfly" >> Dockerfile'
-            sh 'echo "EXPOSE 8080" >> Dockerfile'
-            sh 'echo "ADD helloworld-project/helloworld-ws/target/helloworld-ws.war /opt/jboss/wildfly/standalone/deployments/" >> Dockerfile'
+                publishing.BuildAndPublishToNexus("${BUILD_NUMBER}", 'nexus.akarpyza.lab.playpit.by/repository/artifacts_hosted/', 'raw-repo', '7.1.0.GA', 'org', 'nexus creds')
+            },
+            "Push image": {
+                sh 'echo "FROM jboss/wildfly" >> Dockerfile'
+                sh 'echo "EXPOSE 8080" >> Dockerfile'
+                sh 'echo "ADD helloworld-project/helloworld-ws/target/helloworld-ws.war /opt/jboss/wildfly/standalone/deployments/" >> Dockerfile'
 
-            publishing.PushToDocker("${BUILD_NUMBER}", 'nexus creds', 'https://docker.akarpyza.lab.playpit.by', 'DOCKER')
-        }
-    )
-}
-}
-catch (err) {
-    echo "Caught: ${err}"
-    currentBuild.result = 'FAILURE'
-    //step([$class: 'Mailer', recipients: 'andrey.karpyza.steam@gmail.com'])
-}
-try {
+                publishing.PushToDocker("${BUILD_NUMBER}", 'nexus creds', 'https://docker.akarpyza.lab.playpit.by', 'DOCKER')
+            }
+        )
+    }
     stage('Asking for manual approval') {
         timeout(time: 120, unit: 'SECONDS') {
-            input 'It\'s successfully builded. Please, approve changes'
+            proceed = input 'It\'s successfully builded. Please, approve changes'
+
+        }
+        if (proceed != "proceed"){
+            throw new Exception("You didn't approve deploy of new application version. Response: ${proceed}. Stopping...")
         }
     }
-}
-catch (err) {
-    echo "Caught: ${err}"
-    currentBuild.result = 'FAILURE'
-    //step([$class: 'Mailer', recipients: 'andrey.karpyza.steam@gmail.com'])
-}
-try {
     stage('Deployment') {
         sh """echo "apiVersion: apps/v1
 kind: Deployment
@@ -143,12 +98,12 @@ spec:
 catch (err) {
     echo "Caught: ${err}"
     currentBuild.result = 'FAILURE'
-    //step([$class: 'Mailer', recipients: 'andrey.karpyza.steam@gmail.com'])
+    step([$class: 'Mailer', recipients: 'andrey.karpyza.steam@gmail.com'])
 }
 finally {
         stage('Sending status') {
             currentBuild.result = 'SUCCESS'
-            //step([$class: 'Mailer', recipients: 'andrey.karpyza.steam@gmail.com'])
+            step([$class: 'Mailer', recipients: 'andrey.karpyza.steam@gmail.com'])
         }
     }
 }
