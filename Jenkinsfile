@@ -1,3 +1,4 @@
+@Library('pipeline-library') _
 node ('master'){
 try {
   stage('Checking out') {
@@ -69,20 +70,15 @@ stage('Packaging and Publishing results') {
     parallel(
        "Push artifact": {
             sh "tar -cvf pipeline-akarpyza-${BUILD_NUMBER}.tar.gz helloworld-project/helloworld-ws/target/helloworld-ws.war output.txt"
-            archiveArtifacts artifacts: "pipeline-akarpyza-${BUILD_NUMBER}.tar.gz", followSymlinks: false
-            nexusArtifactUploader artifacts: [[artifactId: 'pipeline-akarpyza-${BUILD_NUMBER}', classifier: '', file: 'pipeline-akarpyza-${BUILD_NUMBER}.tar.gz', type: 'tar.gz']], credentialsId: 'nexus creds', groupId: 'org', nexusUrl: 'nexus.akarpyza.lab.playpit.by/repository/artifacts_hosted/', nexusVersion: 'nexus3', protocol: 'http', repository: 'raw-repo', version: '7.1.0.GA'
+
+            BuildAndPublishToNexus($BUILD_NUMBER, 'nexus.akarpyza.lab.playpit.by/repository/artifacts_hosted/', 'raw-repo', '7.1.0.GA', 'org', 'nexus creds') {
         },
         "Push image": {
-            withDockerRegistry(credentialsId: 'nexus creds', url: 'https://docker.akarpyza.lab.playpit.by',  toolName: 'DOCKER'){
-                sh 'echo "FROM jboss/wildfly" >> Dockerfile'
-                sh 'echo "EXPOSE 8080" >> Dockerfile'
-                sh 'echo "ADD helloworld-project/helloworld-ws/target/helloworld-ws.war /opt/jboss/wildfly/standalone/deployments/" >> Dockerfile'
+            sh 'echo "FROM jboss/wildfly" >> Dockerfile'
+            sh 'echo "EXPOSE 8080" >> Dockerfile'
+            sh 'echo "ADD helloworld-project/helloworld-ws/target/helloworld-ws.war /opt/jboss/wildfly/standalone/deployments/" >> Dockerfile'
 
-    
-                sh "/opt/docker-18.09.9/bin/docker build -t check_image-${BUILD_NUMBER} ."
-                sh "/opt/docker-18.09.9/bin/docker tag check_image-${BUILD_NUMBER} docker.akarpyza.lab.playpit.by/helloworld-akarpyza:${BUILD_NUMBER}"
-                sh "/opt/docker-18.09.9/bin/docker push docker.akarpyza.lab.playpit.by/helloworld-akarpyza:${BUILD_NUMBER}"
-            }
+            PushToDocker($BUILD_NUMBER, 'nexus creds', 'https://docker.akarpyza.lab.playpit.by', 'DOCKER') {
         }
     )
 }
