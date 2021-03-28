@@ -57,7 +57,7 @@ node ('master'){
 kind: Deployment
 metadata:
   name: helloworld-ws-deployment
-  namespace: akarpyza
+  namespace: jenkins
 spec:
   selector:
     matchLabels:
