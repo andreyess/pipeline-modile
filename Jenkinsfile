@@ -39,7 +39,7 @@ node ('master'){
                     publishing.BuildAndPublishToNexus("${BUILD_NUMBER}", 'nexus.akarpyza.lab.playpit.by/repository/artifacts_hosted/', 'raw-repo', '7.1.0.GA', 'org', 'nexus creds')
                 },
                 "Push image": {
-                    sh 'echo "FROM jboss/wildfly" >> Dockerfile'
+                    sh 'echo "FROM jboss/wildfly" > Dockerfile'
                     sh 'echo "EXPOSE 8080" >> Dockerfile'
                     sh 'echo "ADD helloworld-project/helloworld-ws/target/helloworld-ws.war /opt/jboss/wildfly/standalone/deployments/" >> Dockerfile'
 
@@ -49,11 +49,10 @@ node ('master'){
         }
         stage('Asking for manual approval') {
             timeout(time: 120, unit: 'SECONDS') {
-                proceed = input 'It\'s successfully builded. Please, approve changes'
-
-            }
-            if (proceed != "proceed"){
-                throw new Exception("You didn't approve deploy of new application version. Response: ${proceed}. Stopping...")
+                def proceed = input 'It\'s successfully builded. Please, approve changes'
+                if (proceed != "proceed"){
+                    throw new Exception("You didn't approve deploy of new application version. Response: ${proceed}. Stopping...")
+                }
             }
         }
         stage('Deployment') {
