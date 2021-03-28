@@ -71,14 +71,14 @@ stage('Packaging and Publishing results') {
        "Push artifact": {
             sh "tar -cvf pipeline-akarpyza-${BUILD_NUMBER}.tar.gz helloworld-project/helloworld-ws/target/helloworld-ws.war output.txt"
 
-            BuildAndPublishToNexus($BUILD_NUMBER, 'nexus.akarpyza.lab.playpit.by/repository/artifacts_hosted/', 'raw-repo', '7.1.0.GA', 'org', 'nexus creds')
+            BuildAndPublishToNexus("${BUILD_NUMBER}", 'nexus.akarpyza.lab.playpit.by/repository/artifacts_hosted/', 'raw-repo', '7.1.0.GA', 'org', 'nexus creds')
         },
         "Push image": {
             sh 'echo "FROM jboss/wildfly" >> Dockerfile'
             sh 'echo "EXPOSE 8080" >> Dockerfile'
             sh 'echo "ADD helloworld-project/helloworld-ws/target/helloworld-ws.war /opt/jboss/wildfly/standalone/deployments/" >> Dockerfile'
 
-            PushToDocker($BUILD_NUMBER, 'nexus creds', 'https://docker.akarpyza.lab.playpit.by', 'DOCKER')
+            PushToDocker("${BUILD_NUMBER}", 'nexus creds', 'https://docker.akarpyza.lab.playpit.by', 'DOCKER')
         }
     )
 }
