@@ -28,8 +28,8 @@ node ('master'){
             )
         }
         stage('Triggering job and fetching') {
-        build propagate: false, job: 'MNTLAB-akarpyza-child1-build-job', parameters: [string(name: 'BRANCH_NAME', value: 'akarpyza')]
-        copyArtifacts fingerprintArtifacts: true, projectName: 'MNTLAB-akarpyza-child1-build-job', selector: lastSuccessful()
+            build propagate: false, job: 'MNTLAB-akarpyza-child1-build-job', parameters: [string(name: 'BRANCH_NAME', value: 'akarpyza')]
+            copyArtifacts fingerprintArtifacts: true, projectName: 'MNTLAB-akarpyza-child1-build-job', selector: lastSuccessful()
         }
         stage('Packaging and Publishing results') {
             parallel(
@@ -56,38 +56,38 @@ node ('master'){
             sh """echo "apiVersion: apps/v1
 kind: Deployment
 metadata:
-name: helloworld-ws-deployment
-namespace: jenkins
+  name: helloworld-ws-deployment
+  namespace: akarpyza
 spec:
-selector:
+  selector:
     matchLabels:
-    app: helloworld-ws
-minReadySeconds: 5
-template:
+      app: helloworld-ws
+  minReadySeconds: 5
+  template:
     metadata:
-    labels:
+      labels:
         app: helloworld-ws
     spec:
-    containers:
-    - name: tomcat-helloworld-ws
+      containers:
+      - name: tomcat-helloworld-ws
         image: docker.akarpyza.lab.playpit.by/helloworld-akarpyza:$BUILD_NUMBER
         ports:
         - containerPort: 8080
         readinessProbe:
-        httpGet:
+          httpGet:
             path: /helloworld-ws
             port: 8080
-        periodSeconds: 10
-        timeoutSeconds: 5
-        successThreshold: 2
-        failureThreshold: 5
-    imagePullSecrets:
-    - name: nexus
-strategy:
+          periodSeconds: 10
+          timeoutSeconds: 5
+          successThreshold: 2
+          failureThreshold: 5
+      imagePullSecrets:
+      - name: nexus
+  strategy:
     type: RollingUpdate
     rollingUpdate:
-    maxSurge: 2
-    maxUnavailable: 0" > deployment.yml"""
+      maxSurge: 2
+      maxUnavailable: 0" > deployment.yml"""
             step([$class: 'KubernetesEngineBuilder', projectId: "splendid-sunset-291720", clusterName: "cluster-2", zone: "us-west1-a", manifestPattern: 'deployment.yml', credentialsId: "splendid-sunset-291720"])
         }
         stage('Sending status') {
