@@ -34,7 +34,7 @@ node ('executor'){
         stage('Packaging and Publishing results') {
             container('docker-container') {
                 parallel(
-/                "Push artifact": {
+                "Push artifact": {
                     sh "tar -cvf pipeline-akarpyza-${BUILD_NUMBER}.tar.gz helloworld-project/helloworld-ws/target/helloworld-ws.war output.txt"
 
                     publishing.BuildAndPublishToNexus("${BUILD_NUMBER}", 'nexus.akarpyza.lab.playpit.by/repository/artifacts_hosted/', 'raw-repo', '7.1.0.GA', 'org', 'nexus creds')
