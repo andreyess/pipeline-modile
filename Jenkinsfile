@@ -1,21 +1,21 @@
 @Library('pipeline-library') _
-node ('master'){
+node ('executor'){
     try {
         stage('Checking out') {
             git branch: 'main', changelog: false, credentialsId: 'git-andreyess-private-key', poll: false, url: 'https://github.com/andreyess/build-tools.git'
         }
         stage ('Building code') {
-            mvnHome = tool name: 'MAVEN', type: 'maven'
+            mvnHome = tool name: 'MAVEN_automatic', type: 'maven'
             sh "'${mvnHome}/bin/mvn' -Dmaven.test.failure.ignore clean package -f helloworld-project/helloworld-ws/pom.xml"
         }
         stage ('Sonar scan') {
             withSonarQubeEnv(credentialsId: 'sonar-secret') {
-                sonarHome = tool name: 'SONAR', type: 'hudson.plugins.sonar.SonarRunnerInstallation'
+                sonarHome = tool name: 'SONAR_automatic', type: 'hudson.plugins.sonar.SonarRunnerInstallation'
                 sh "${sonarHome}/bin/sonar-scanner -Dsonar.java.binaries=helloworld-project/helloworld-ws/target/classes -Dsonar.host.url=http://sonar.akarpyza.lab.playpit.by/ -Dsonar.projectKey=MNT:akarpyza-pipeline -Dsonar.sources=helloworld-project/helloworld-ws -Dsonar.projectName=\"MNT 11 akarpyza pipeline\" -Dsonar.projectVersion=${BUILD_TAG}"
             }
         }
         stage('Testing') {
-            mvnHome = tool name: 'MAVEN', type: 'maven'
+            mvnHome = tool name: 'MAVEN_automatic', type: 'maven'
             parallel (
                 "pre-integration-test": {
                     sh "'${mvnHome}/bin/mvn' test -f helloworld-project/helloworld-ws/pom.xml"
@@ -43,7 +43,7 @@ node ('master'){
                     sh 'echo "EXPOSE 8080" >> Dockerfile'
                     sh 'echo "ADD helloworld-project/helloworld-ws/target/helloworld-ws.war /opt/jboss/wildfly/standalone/deployments/" >> Dockerfile'
 
-                    publishing.PushToDocker("${BUILD_NUMBER}", 'nexus creds', 'https://docker.akarpyza.lab.playpit.by', 'DOCKER')
+                    publishing.PushToDocker("${BUILD_NUMBER}", 'nexus creds', 'https://docker.akarpyza.lab.playpit.by', 'DOCKER_automatic')
                 }
             )
         }
