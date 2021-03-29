@@ -55,6 +55,7 @@ node ('executor'){
             }
         }
         stage('Deployment') {
+            container('docker-container') {
             sh 'curl -LO https://storage.googleapis.com/kubernetes-release/release/$(curl -s https://storage.googleapis.com/kubernetes-release/release/stable.txt)/bin/linux/amd64/kubectl'
             sh 'chmod +x ./kubectl'
             //sh 'export PATH=$PATH:$(pwd)'
@@ -95,6 +96,8 @@ spec:
       maxSurge: 2
       maxUnavailable: 0" > deployment.yml"""
             step([$class: 'KubernetesEngineBuilder', projectId: "splendid-sunset-291720", clusterName: "cluster-2", zone: "us-west1-a", manifestPattern: 'deployment.yml', credentialsId: "splendid-sunset-291720"])
+            }
+
         }
         stage('Sending status') {
             currentBuild.result = 'SUCCESS'
