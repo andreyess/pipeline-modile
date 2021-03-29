@@ -8,7 +8,7 @@ node ('executor'){
             mvnHome = tool name: 'MAVEN_automatic', type: 'maven'
             sh "'${mvnHome}/bin/mvn' -Dmaven.test.failure.ignore clean package -f helloworld-project/helloworld-ws/pom.xml"
         }
-        stage ('Sonar scan') {
+/*        stage ('Sonar scan') {
             withSonarQubeEnv(credentialsId: 'sonar-secret') {
                 sonarHome = tool name: 'SONAR_automatic', type: 'hudson.plugins.sonar.SonarRunnerInstallation'
                 sh "${sonarHome}/bin/sonar-scanner -Dsonar.java.binaries=helloworld-project/helloworld-ws/target/classes -Dsonar.host.url=http://sonar.akarpyza.lab.playpit.by/ -Dsonar.projectKey=MNT:akarpyza-pipeline -Dsonar.sources=helloworld-project/helloworld-ws -Dsonar.projectName=\"MNT 11 akarpyza pipeline\" -Dsonar.projectVersion=${BUILD_TAG}"
@@ -30,14 +30,15 @@ node ('executor'){
         stage('Triggering job and fetching') {
             build propagate: false, job: 'MNTLAB-akarpyza-child1-build-job', parameters: [string(name: 'BRANCH_NAME', value: 'akarpyza')]
             copyArtifacts fingerprintArtifacts: true, projectName: 'MNTLAB-akarpyza-child1-build-job', selector: lastSuccessful()
-        }
+        }*/
+        try{
         stage('Packaging and Publishing results') {
             parallel(
-            "Push artifact": {
+/*            "Push artifact": {
                     sh "tar -cvf pipeline-akarpyza-${BUILD_NUMBER}.tar.gz helloworld-project/helloworld-ws/target/helloworld-ws.war output.txt"
 
                     publishing.BuildAndPublishToNexus("${BUILD_NUMBER}", 'nexus.akarpyza.lab.playpit.by/repository/artifacts_hosted/', 'raw-repo', '7.1.0.GA', 'org', 'nexus creds')
-                },
+                },*/
                 "Push image": {
                     sh 'echo "FROM jboss/wildfly" > Dockerfile'
                     sh 'echo "EXPOSE 8080" >> Dockerfile'
@@ -47,6 +48,16 @@ node ('executor'){
                 }
             )
         }
+        }
+        catch (ex) {
+            timeout(time: 600, unit: 'SECONDS') {
+                input  'Approve to fail'
+            }
+            echo "Caught: ${ex.getMessage()}"
+            currentBuild.result = 'FAILURE'
+            step([$class: 'Mailer', recipients: 'andrey.karpyza.steam@gmail.com'])
+        }
+
         stage('Asking for manual approval') {
             timeout(time: 120, unit: 'SECONDS') {
                 input 'It\'s successfully builded. Please, approve changes'
