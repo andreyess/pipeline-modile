@@ -102,6 +102,9 @@ spec:
         }
     }
     catch (ex) {
+        timeout(time: 600, unit: 'SECONDS') {
+            input 'FAILURE'
+        }
         echo "Caught: ${ex.getMessage()}"
         currentBuild.result = 'FAILURE'
         //step([$class: 'Mailer', recipients: 'andrey.karpyza.steam@gmail.com'])
