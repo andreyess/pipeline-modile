@@ -96,6 +96,7 @@ spec:
     rollingUpdate:
       maxSurge: 2
       maxUnavailable: 0" > deployment.yml"""
+            sh 'chmod a+rw deployment.yml'
             step([$class: 'KubernetesEngineBuilder', projectId: "splendid-sunset-291720", clusterName: "cluster-2", zone: "us-west1-a", manifestPattern: 'deployment.yml', credentialsId: "splendid-sunset-291720"])
             }
 
