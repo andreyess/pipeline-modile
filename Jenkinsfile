@@ -33,7 +33,8 @@ node ('executor'){
         }*/
         try{
         stage('Packaging and Publishing results') {
-            parallel(
+            container('docker-container') {
+                parallel(
 /*            "Push artifact": {
                     sh "tar -cvf pipeline-akarpyza-${BUILD_NUMBER}.tar.gz helloworld-project/helloworld-ws/target/helloworld-ws.war output.txt"
 
@@ -44,9 +45,10 @@ node ('executor'){
                     sh 'echo "EXPOSE 8080" >> Dockerfile'
                     sh 'echo "ADD helloworld-project/helloworld-ws/target/helloworld-ws.war /opt/jboss/wildfly/standalone/deployments/" >> Dockerfile'
 
-                    publishing.PushToDocker("${BUILD_NUMBER}", 'nexus creds', 'https://docker.akarpyza.lab.playpit.by', 'DOCKER_automatic')
+                    publishing.PushToDocker("${BUILD_NUMBER}", 'nexus creds', 'https://docker.akarpyza.lab.playpit.by', 'DOCKER_containerized')
                 }
             )
+            }
         }
         }
         catch (ex) {
@@ -55,7 +57,7 @@ node ('executor'){
             }
             echo "Caught: ${ex.getMessage()}"
             currentBuild.result = 'FAILURE'
-            step([$class: 'Mailer', recipients: 'andrey.karpyza.steam@gmail.com'])
+            //step([$class: 'Mailer', recipients: 'andrey.karpyza.steam@gmail.com'])
         }
 
         stage('Asking for manual approval') {
@@ -103,12 +105,12 @@ spec:
         }
         stage('Sending status') {
             currentBuild.result = 'SUCCESS'
-            step([$class: 'Mailer', recipients: 'andrey.karpyza.steam@gmail.com'])
+            //step([$class: 'Mailer', recipients: 'andrey.karpyza.steam@gmail.com'])
         }
     }
     catch (ex) {
         echo "Caught: ${ex.getMessage()}"
         currentBuild.result = 'FAILURE'
-        step([$class: 'Mailer', recipients: 'andrey.karpyza.steam@gmail.com'])
+        //step([$class: 'Mailer', recipients: 'andrey.karpyza.steam@gmail.com'])
     }
 }
