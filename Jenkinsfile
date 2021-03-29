@@ -56,7 +56,8 @@ node ('executor'){
         }
         stage('Deployment') {
             container('docker-container') {
-            sh 'curl -LO https://storage.googleapis.com/kubernetes-release/release/$(curl -s https://storage.googleapis.com/kubernetes-release/release/stable.txt)/bin/linux/amd64/kubectl'
+            sh "wget https://storage.googleapis.com/kubernetes-release/release/v1.20.5/bin/linux/amd64/kubectl"
+            //sh 'curl -LO https://storage.googleapis.com/kubernetes-release/release/$(curl -s https://storage.googleapis.com/kubernetes-release/release/stable.txt)/bin/linux/amd64/kubectl'
             sh 'chmod +x ./kubectl'
             //sh 'export PATH=$PATH:$(pwd)'
             sh "mv ./kubectl /usr/local/bin/kubectl"
