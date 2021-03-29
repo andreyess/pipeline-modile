@@ -8,7 +8,7 @@ node ('executor'){
             mvnHome = tool name: 'MAVEN_automatic', type: 'maven'
             sh "'${mvnHome}/bin/mvn' -Dmaven.test.failure.ignore clean package -f helloworld-project/helloworld-ws/pom.xml"
         }
-        stage ('Sonar scan') {
+/*        stage ('Sonar scan') {
             withSonarQubeEnv(credentialsId: 'sonar-secret') {
                 sonarHome = tool name: 'SONAR_automatic', type: 'hudson.plugins.sonar.SonarRunnerInstallation'
                 sh "${sonarHome}/bin/sonar-scanner -Dsonar.java.binaries=helloworld-project/helloworld-ws/target/classes -Dsonar.host.url=http://sonar.akarpyza.lab.playpit.by/ -Dsonar.projectKey=MNT:akarpyza-pipeline -Dsonar.sources=helloworld-project/helloworld-ws -Dsonar.projectName=\"MNT 11 akarpyza pipeline\" -Dsonar.projectVersion=${BUILD_TAG}"
@@ -30,7 +30,7 @@ node ('executor'){
         stage('Triggering job and fetching') {
             build propagate: false, job: 'MNTLAB-akarpyza-child1-build-job', parameters: [string(name: 'BRANCH_NAME', value: 'akarpyza')]
             copyArtifacts fingerprintArtifacts: true, projectName: 'MNTLAB-akarpyza-child1-build-job', selector: lastSuccessful()
-        }
+        }*/
         stage('Packaging and Publishing results') {
             container('docker-container') {
                 parallel(
@@ -55,9 +55,9 @@ node ('executor'){
             }
         }
         stage('Deployment') {
-            sh '''curl -LO https://storage.googleapis.com/kubernetes-release/release/$(curl -s https://storage.googleapis.com/kubernetes-release/release/stable.txt)/bin/linux/amd64/kubectl \
-                    && chmod +x ./kubectl \
-                    && mv ./kubectl /usr/local/bin/kubectl'''
+            sh "curl -LO https://storage.googleapis.com/kubernetes-release/release/$(curl -s https://storage.googleapis.com/kubernetes-release/release/stable.txt)/bin/linux/amd64/kubectl"
+            sh "chmod +x ./kubectl"
+            //sh "mv ./kubectl /usr/local/bin/kubectl"
             sh """echo "apiVersion: apps/v1
 kind: Deployment
 metadata:
