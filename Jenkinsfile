@@ -57,6 +57,7 @@ node ('executor'){
         stage('Deployment') {
             sh 'curl -LO https://storage.googleapis.com/kubernetes-release/release/$(curl -s https://storage.googleapis.com/kubernetes-release/release/stable.txt)/bin/linux/amd64/kubectl'
             sh 'chmod +x ./kubectl'
+            sh 'export PATH=$PATH:$(pwd)'
             //sh "mv ./kubectl /usr/local/bin/kubectl"
             sh """echo "apiVersion: apps/v1
 kind: Deployment
